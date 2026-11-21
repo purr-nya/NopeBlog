@@ -1,27 +1,43 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import {
+  Archive,
   Camera,
   ExternalLink,
   FileText,
   Send,
   Users,
-  X,
 } from 'lucide-react';
-import type { Comment, FriendLink, GalleryItem, StandalonePage } from '../types/blog';
+import type {
+  Category,
+  Comment,
+  FriendLink,
+  GalleryItem,
+  LightboxSlide,
+  Post,
+  StandalonePage,
+  UserProfile,
+} from '../types/blog';
 import { blogApi } from '../services/api';
 import { sanitizeUrl } from '../utils/markdown';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { CommentSection } from './CommentSection';
+import { ArchivesView } from './ArchivesView';
 
-export type ExploreTab = 'friends' | 'gallery' | 'pages';
+export type ExploreTab = 'archives' | 'friends' | 'gallery' | 'pages';
 
 interface ExploreViewProps {
   initialTab?: ExploreTab;
   initialPageSlug?: string | null;
+  posts: Post[];
+  categories: Category[];
   friends: FriendLink[];
   gallery: GalleryItem[];
   pages: StandalonePage[];
   comments: Comment[];
+  currentUser: UserProfile | null;
+  likedCommentIds: string[];
+  onSelectPost: (post: Post) => void;
+  onOpenLightbox: (slides: LightboxSlide[], index: number) => void;
   onSubmitComment: (payload: {
     targetType: 'post' | 'moment' | 'page';
     targetId: string;
@@ -31,16 +47,26 @@ interface ExploreViewProps {
     url?: string;
     content: string;
   }) => Promise<{ flaggedSpam: boolean }>;
+  onLikeComment: (id: string) => void;
+  onDeleteComment: (id: string) => Promise<void>;
 }
 
 export function ExploreView({
-  initialTab = 'friends',
+  initialTab = 'archives',
   initialPageSlug = null,
+  posts,
+  categories,
   friends,
   gallery,
   pages,
   comments,
+  currentUser,
+  likedCommentIds,
+  onSelectPost,
+  onOpenLightbox,
   onSubmitComment,
+  onLikeComment,
+  onDeleteComment,
 }: ExploreViewProps) {
   const [activeTab, setActiveTab] = useState<ExploreTab>(
     initialPageSlug ? 'pages' : initialTab
@@ -48,7 +74,16 @@ export function ExploreView({
   const [activePageSlug, setActivePageSlug] = useState<string>(
     initialPageSlug || pages[0]?.slug || 'about'
   );
-  const [lightboxItem, setLightboxItem] = useState<GalleryItem | null>(null);
+
+  // Sync external navigation into Explore tabs
+  useEffect(() => {
+    if (initialPageSlug) {
+      setActiveTab('pages');
+      setActivePageSlug(initialPageSlug);
+    } else if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab, initialPageSlug]);
 
   // Friend link application form
   const [friendName, setFriendName] = useState('');
@@ -59,6 +94,17 @@ export function ExploreView({
   const [friendSuccess, setFriendSuccess] = useState<string | null>(null);
 
   const activePage = pages.find((p) => p.slug === activePageSlug) || pages[0];
+
+  const gallerySlides: LightboxSlide[] = useMemo(
+    () =>
+      gallery.map((item) => ({
+        src: item.image,
+        title: item.title,
+        caption: item.caption,
+        meta: `${item.camera} · ${item.lens} · ${item.exif} · ${item.location} (${item.takenAt})`,
+      })),
+    [gallery]
+  );
 
   const handleFriendApply = async (e: FormEvent) => {
     e.preventDefault();
@@ -89,24 +135,25 @@ export function ExploreView({
   return (
     <div className="space-y-6">
       {/* Header & Segmented Sub-Page Navigation */}
-      <section className="m3-card p-6 sm:p-8">
+      <section className="m3-card p-6 sm:p-8 fuwari-onload">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="font-display text-2xl sm:text-3xl font-bold text-[var(--md-on-surface)]">
-              探索与更多页面
+              探索与专题档案
             </h1>
             <p className="mt-2 text-sm text-[var(--md-on-surface-variant)]">
-              浏览邻里友链、摄影光影画廊，以及通过 Typecho 独立页面创建的专题档案。
+              时间归档轴、邻里友链、光影画廊与 Typecho 独立页面均汇聚于此。
             </p>
           </div>
 
           <div
             role="tablist"
             aria-label="探索页面切换"
-            className="inline-flex items-center gap-1 p-1 rounded-[var(--radius-control)] bg-[var(--md-surface-container)]"
+            className="inline-flex flex-wrap items-center gap-1 p-1 rounded-[var(--radius-control)] bg-[var(--md-surface-container)]"
           >
             {(
               [
+                { id: 'archives', label: '文章归档', icon: Archive },
                 { id: 'friends', label: '邻里友链', icon: Users },
                 { id: 'gallery', label: '光影画廊', icon: Camera },
                 { id: 'pages', label: '独立页面与关于', icon: FileText },
@@ -121,7 +168,7 @@ export function ExploreView({
                   role="tab"
                   aria-selected={selected}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-[calc(var(--radius-control)-4px)] whitespace-nowrap transition-colors cursor-pointer ${
+                  className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-[calc(var(--radius-control)-4px)] whitespace-nowrap transition-colors cursor-pointer ${
                     selected
                       ? 'bg-[var(--md-primary)] text-[var(--md-on-primary)]'
                       : 'text-[var(--md-on-surface-variant)] hover:text-[var(--md-on-surface)]'
@@ -136,17 +183,29 @@ export function ExploreView({
         </div>
       </section>
 
+      {/* Tab 0: Integrated Archives Timeline */}
+      {activeTab === 'archives' && (
+        <ArchivesView
+          posts={posts}
+          categories={categories}
+          initialCategory={null}
+          initialTag={null}
+          onSelectPost={onSelectPost}
+        />
+      )}
+
       {/* Tab 1: Friends Directory + Self Application */}
       {activeTab === 'friends' && (
         <div className="space-y-6">
           <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {friends.map((friend) => (
+            {friends.map((friend, idx) => (
               <a
                 key={friend.id}
                 href={sanitizeUrl(friend.url)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="m3-card p-5 flex items-start gap-4 hover:border-[var(--md-primary)]/50 transition-colors group"
+                style={{ ['--stagger' as string]: Math.min(idx, 8) }}
+                className="m3-card m3-card-interactive fuwari-onload p-5 flex items-start gap-4 group"
               >
                 <div className="w-12 h-12 rounded-2xl bg-[var(--md-primary-container)] text-[var(--md-on-primary-container)] font-display font-bold text-lg inline-flex items-center justify-center shrink-0">
                   {friend.avatar}
@@ -166,7 +225,6 @@ export function ExploreView({
             ))}
           </section>
 
-          {/* Self-Service Friend Link Application */}
           <section className="m3-card p-6 sm:p-8 space-y-4">
             <div>
               <h2 className="font-display text-lg font-bold text-[var(--md-on-surface)]">
@@ -180,7 +238,10 @@ export function ExploreView({
             <form onSubmit={handleFriendApply} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label htmlFor="fr-name" className="block text-xs font-medium text-[var(--md-on-surface-variant)] mb-1.5">
+                  <label
+                    htmlFor="fr-name"
+                    className="block text-xs font-medium text-[var(--md-on-surface-variant)] mb-1.5"
+                  >
                     站点名称 *
                   </label>
                   <input
@@ -193,7 +254,10 @@ export function ExploreView({
                   />
                 </div>
                 <div>
-                  <label htmlFor="fr-url" className="block text-xs font-medium text-[var(--md-on-surface-variant)] mb-1.5">
+                  <label
+                    htmlFor="fr-url"
+                    className="block text-xs font-medium text-[var(--md-on-surface-variant)] mb-1.5"
+                  >
                     站点链接 *
                   </label>
                   <input
@@ -208,7 +272,10 @@ export function ExploreView({
               </div>
 
               <div>
-                <label htmlFor="fr-desc" className="block text-xs font-medium text-[var(--md-on-surface-variant)] mb-1.5">
+                <label
+                  htmlFor="fr-desc"
+                  className="block text-xs font-medium text-[var(--md-on-surface-variant)] mb-1.5"
+                >
                   一句话简介 *
                 </label>
                 <input
@@ -245,18 +312,22 @@ export function ExploreView({
         </div>
       )}
 
-      {/* Tab 2: Photography Gallery with EXIF & Fullscreen Lightbox */}
+      {/* Tab 2: Photography Gallery -> Global Lightbox */}
       {activeTab === 'gallery' && (
         <section className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {gallery.map((item, idx) => (
             <figure
               key={item.id}
-              className={`m3-card overflow-hidden group ${idx === 0 ? 'md:col-span-2' : ''}`}
+              style={{ ['--stagger' as string]: Math.min(idx, 8) }}
+              className={`m3-card m3-card-interactive fuwari-onload overflow-hidden group ${
+                idx === 0 ? 'md:col-span-2' : ''
+              }`}
             >
               <button
                 type="button"
-                onClick={() => setLightboxItem(item)}
-                className="block w-full text-left cursor-pointer"
+                onClick={() => onOpenLightbox(gallerySlides, idx)}
+                aria-label={`在独立灯箱中查看：${item.title}`}
+                className="block w-full text-left cursor-zoom-in"
               >
                 <div
                   className={`relative overflow-hidden bg-[var(--md-surface-container-high)] ${
@@ -317,7 +388,7 @@ export function ExploreView({
 
           {activePage && (
             <>
-              <article className="m3-card p-6 sm:p-10">
+              <article className="m3-card p-6 sm:p-10 fuwari-onload">
                 <div className="text-xs text-[var(--md-on-surface-variant)]">
                   独立页面 · /{activePage.slug}
                 </div>
@@ -330,7 +401,12 @@ export function ExploreView({
                   </p>
                 )}
                 <hr className="my-6 border-[var(--md-outline-variant)]/70" />
-                <MarkdownRenderer content={activePage.content} />
+                <MarkdownRenderer
+                  content={activePage.content}
+                  onOpenImage={(src, alt) =>
+                    onOpenLightbox([{ src, title: alt || activePage.title, caption: alt }], 0)
+                  }
+                />
               </article>
 
               {activePage.allowComment && (
@@ -338,58 +414,15 @@ export function ExploreView({
                   targetType="page"
                   targetId={activePage.id}
                   comments={comments}
+                  currentUser={currentUser}
+                  likedCommentIds={likedCommentIds}
                   onSubmitComment={onSubmitComment}
+                  onLikeComment={onLikeComment}
+                  onDeleteComment={onDeleteComment}
                 />
               )}
             </>
           )}
-        </div>
-      )}
-
-      {/* Fullscreen Photography Lightbox */}
-      {lightboxItem && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={lightboxItem.title}
-          onClick={() => setLightboxItem(null)}
-          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 sm:p-8"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="max-w-5xl w-full bg-[var(--md-surface-container-lowest)] rounded-[var(--radius-card)] overflow-hidden border border-[var(--md-outline-variant)]"
-          >
-            <div className="relative bg-black">
-              <img
-                src={lightboxItem.image}
-                alt={lightboxItem.title}
-                referrerPolicy="no-referrer"
-                className="w-full max-h-[70vh] object-contain mx-auto"
-              />
-              <button
-                type="button"
-                onClick={() => setLightboxItem(null)}
-                aria-label="关闭大图预览"
-                className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/70 text-white inline-flex items-center justify-center hover:bg-black cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-5 sm:p-6 flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <h3 className="font-display text-lg font-bold text-[var(--md-on-surface)]">
-                  {lightboxItem.title}
-                </h3>
-                <p className="mt-1 text-sm text-[var(--md-on-surface-variant)]">
-                  {lightboxItem.caption}
-                </p>
-              </div>
-              <div className="text-right font-mono text-xs tabular-nums text-[var(--md-on-surface-variant)]">
-                <div>{lightboxItem.camera} · {lightboxItem.lens}</div>
-                <div className="mt-0.5">{lightboxItem.exif} · {lightboxItem.location}</div>
-              </div>
-            </div>
-          </div>
         </div>
       )}
     </div>

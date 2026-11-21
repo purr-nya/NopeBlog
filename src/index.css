@@ -95,7 +95,13 @@ code, pre, .font-mono {
   border-radius: var(--radius-card);
   transition: background-color 220ms cubic-bezier(0.16, 1, 0.3, 1),
               border-color 220ms cubic-bezier(0.16, 1, 0.3, 1),
-              transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+              transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.m3-card-interactive:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in oklab, var(--md-primary) 42%, var(--md-outline-variant));
 }
 
 .m3-surface-low {
@@ -108,19 +114,87 @@ code, pre, .font-mono {
   border-radius: var(--radius-inner);
 }
 
-@keyframes m3-view-enter {
-  from {
+/* Authentic Fuwari Swup-like Route & Staggered Onload Animations */
+@keyframes fuwari-fade-in-up {
+  0% {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(16px) scale(0.992);
   }
-  to {
+  100% {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
   }
 }
 
+@keyframes fuwari-fade-out-down {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@keyframes fuwari-scale-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fuwari-drawer-in {
+  0% {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes m3-heart-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.32);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.fuwari-onload {
+  opacity: 0;
+  animation: fuwari-fade-in-up 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--stagger, 0) * 55ms);
+}
+
 .m3-view-enter {
-  animation: m3-view-enter 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: fuwari-fade-in-up 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.m3-view-leaving {
+  animation: fuwari-fade-out-down 140ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+.fuwari-modal-enter {
+  animation: fuwari-scale-in 210ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.fuwari-drawer-enter {
+  animation: fuwari-drawer-in 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-heart-pop {
+  animation: m3-heart-pop 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* Dynamic Circular Ripple Dark Mode Transition (View Transitions API) */
@@ -180,8 +254,16 @@ input[type="range"].hue-slider::-webkit-slider-thumb:hover {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  ::view-transition-new(root) {
-    animation: none;
+  ::view-transition-new(root),
+  .fuwari-onload,
+  .m3-view-enter,
+  .m3-view-leaving,
+  .fuwari-modal-enter,
+  .fuwari-drawer-enter,
+  .animate-heart-pop {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
   }
   html {
     scroll-behavior: auto;

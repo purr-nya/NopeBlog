@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ArrowUpRight, Bookmark, Heart, Lock, Pin } from 'lucide-react';
 import type { Category, DensityMode, Post } from '../types/blog';
 import { formatShortDate } from '../utils/blogLogic';
@@ -8,9 +9,12 @@ interface ArticleCardProps {
   category?: Category;
   density: DensityMode;
   compactCard?: boolean;
+  staggerIndex?: number;
   isSaved: boolean;
+  isLiked: boolean;
   onOpen: (post: Post) => void;
   onToggleSave: (id: string) => void;
+  onLikePost: (id: string) => void;
 }
 
 export function ArticleCard({
@@ -18,16 +22,29 @@ export function ArticleCard({
   category,
   density,
   compactCard = false,
+  staggerIndex = 0,
   isSaved,
+  isLiked,
   onOpen,
   onToggleSave,
+  onLikePost,
 }: ArticleCardProps) {
+  const [popping, setPopping] = useState(false);
   const words = countWords(post.content || post.excerpt);
   const minutes = estimateReadingMinutes(post.content || post.excerpt);
   const padClass = density === 'compact' ? 'p-4 sm:p-5' : 'p-5 sm:p-7';
 
+  const handleLikeClick = () => {
+    setPopping(true);
+    setTimeout(() => setPopping(false), 340);
+    onLikePost(post.id);
+  };
+
   return (
-    <article className="m3-card group overflow-hidden hover:border-[var(--md-primary)]/45">
+    <article
+      style={{ ['--stagger' as string]: Math.min(staggerIndex, 8) }}
+      className="m3-card m3-card-interactive fuwari-onload group overflow-hidden"
+    >
       <div
         className={`grid grid-cols-1 ${
           !compactCard && post.coverImage ? 'md:grid-cols-12 items-stretch' : ''
@@ -92,14 +109,28 @@ export function ArticleCard({
                   {tag}
                 </span>
               ))}
-              <span aria-hidden="true" className="opacity-50">·</span>
-              <span className="tabular-nums inline-flex items-center gap-1">
-                <Heart className="w-3.5 h-3.5" />
-                {post.likes}
-              </span>
             </div>
 
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleLikeClick}
+                aria-label={isLiked ? `取消点赞 ${post.title}` : `点赞 ${post.title}`}
+                aria-pressed={isLiked}
+                className={`inline-flex items-center gap-1 px-2.5 h-9 text-xs font-medium rounded-[var(--radius-control)] transition-colors cursor-pointer ${
+                  isLiked
+                    ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
+                    : 'bg-[var(--md-surface-container-low)] text-[var(--md-on-surface-variant)] hover:bg-[var(--md-surface-container-high)] hover:text-rose-500'
+                }`}
+              >
+                <Heart
+                  className={`w-3.5 h-3.5 ${isLiked ? 'fill-current' : ''} ${
+                    popping ? 'animate-heart-pop' : ''
+                  }`}
+                />
+                <span className="tabular-nums">{post.likes}</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => onToggleSave(post.id)}

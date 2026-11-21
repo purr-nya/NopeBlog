@@ -14,19 +14,21 @@ import {
   Pencil,
   Plus,
   ShieldCheck,
+  ShoppingBag,
   Trash2,
 } from 'lucide-react';
 import type {
   AdminAuthState,
-  BlogBootstrapData,
   DensityMode,
   HomeLayoutMode,
+  OrderStatus,
   Post,
   RadiusStyle,
   ThemeMode,
 } from '../types/blog';
-import { blogApi } from '../services/api';
+import { blogApi, type AdminOverviewData } from '../services/api';
 import { computeCorpusWordCount, formatShortDate } from '../utils/blogLogic';
+import { formatPriceCny } from '../utils/shopLogic';
 import { HUE_PRESETS } from '../utils/theme';
 import { AdminPostEditor } from './AdminPostEditor';
 
@@ -36,6 +38,7 @@ type AdminTab =
   | 'pages'
   | 'moments'
   | 'comments'
+  | 'orders'
   | 'taxonomy'
   | 'status'
   | 'customize';
@@ -60,9 +63,10 @@ export function AdminPanel({
   const [authBusy, setAuthBusy] = useState(false);
 
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
-  const [adminData, setAdminData] = useState<BlogBootstrapData | null>(null);
+  const [adminData, setAdminData] = useState<AdminOverviewData | null>(null);
   const [loadingOverview, setLoadingOverview] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [trackingDrafts, setTrackingDrafts] = useState<Record<string, string>>({});
 
   // Post Editor state
   const [editingPost, setEditingPost] = useState<Post | null | 'new'>(null);
@@ -408,6 +412,7 @@ export function AdminPanel({
     { id: 'pages', label: '独立页面', icon: FolderKanban, count: adminData?.pages.length },
     { id: 'moments', label: '说说发布', icon: MessageSquarePlus, count: adminData?.moments.length },
     { id: 'comments', label: '评论审核', icon: MessageCircle, count: pendingCommentsCount || undefined },
+    { id: 'orders', label: '商店与订单', icon: ShoppingBag, count: adminData?.orders.length },
     { id: 'taxonomy', label: '分类与友链', icon: ShieldCheck, count: pendingFriendsCount || undefined },
     { id: 'status', label: '个人状态', icon: Activity },
     { id: 'customize', label: '外观与定制', icon: Palette },
@@ -499,8 +504,8 @@ export function AdminPanel({
                 <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {[
                     { label: '文章总数', value: adminData.posts.length },
-                    { label: '说说动态', value: adminData.moments.length },
-                    { label: '评论总数', value: adminData.comments.length },
+                    { label: '商店订单', value: adminData.orders.length },
+                    { label: '注册会员', value: adminData.usersCount },
                     {
                       label: '全站字数',
                       value: computeCorpusWordCount(adminData.posts, adminData.moments).toLocaleString(),
@@ -917,6 +922,110 @@ export function AdminPanel({
                     </div>
                   ))}
                 </div>
+              </section>
+            )}
+
+            {/* Tab 5B: Storefront Orders Management */}
+            {activeTab === 'orders' && (
+              <section className="m3-card p-6 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h2 className="font-display text-lg font-bold text-[var(--md-on-surface)]">
+                    商店订单与发货管理 ({adminData.orders.length})
+                  </h2>
+                  <span className="text-xs text-[var(--md-on-surface-variant)] tabular-nums">
+                    商品目录：{adminData.products.length} 款 · 已支付/交付订单：
+                    {
+                      adminData.orders.filter(
+                        (o) =>
+                          o.status === 'paid' || o.status === 'shipped' || o.status === 'fulfilled'
+                      ).length
+                    }
+                  </span>
+                </div>
+
+                {adminData.orders.length === 0 ? (
+                  <div className="py-10 text-center text-sm text-[var(--md-on-surface-variant)]">
+                    暂无商店订单记录。在前台商店完成支付后将实时同步至此处。
+                  </div>
+                ) : (
+                  <div className="divide-y divide-[var(--md-outline-variant)]/70">
+                    {adminData.orders.map((order) => (
+                      <div key={order.id} className="py-4 space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                          <div className="font-mono text-[var(--md-on-surface)]">
+                            <strong>{order.orderNo}</strong>
+                            {' · '}
+                            <span className="font-sans text-[var(--md-primary)] font-semibold">
+                              {order.status}
+                            </span>
+                            {order.paymentReference && (
+                              <span className="text-[var(--md-on-surface-variant)]">
+                                {' · '}流水 {order.paymentReference}
+                              </span>
+                            )}
+                          </div>
+                          <div className="font-display text-sm font-bold tabular-nums text-[var(--md-on-surface)]">
+                            {formatPriceCny(order.totalCents)}
+                          </div>
+                        </div>
+
+                        <div className="text-xs text-[var(--md-on-surface-variant)]">
+                          买家：{order.customerName} ({order.customerEmail})
+                          {order.shippingAddress ? ` · 地址：${order.shippingAddress}` : ' · 纯数字订单'}
+                        </div>
+
+                        <div className="text-xs text-[var(--md-on-surface)] space-y-1">
+                          {order.items.map((item) => (
+                            <div key={`${order.id}-${item.productId}-${item.variantId}`}>
+                              {item.title} ({item.variantName} × {item.quantity})
+                              {item.digitalLicenseKey ? ` · 授权码 ${item.digitalLicenseKey}` : ''}
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                          <input
+                            type="text"
+                            value={trackingDrafts[order.id] ?? order.trackingNumber ?? ''}
+                            onChange={(e) =>
+                              setTrackingDrafts((prev) => ({ ...prev, [order.id]: e.target.value }))
+                            }
+                            placeholder="填写快递单号（如 SF123456）"
+                            aria-label={`订单 ${order.orderNo} 物流单号`}
+                            className="px-3 py-1.5 text-xs font-mono rounded-lg bg-[var(--md-surface-container-low)] border border-[var(--md-outline-variant)] text-[var(--md-on-surface)] outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              await blogApi.updateAdminOrder(token, order.id, {
+                                status: 'shipped' as OrderStatus,
+                                trackingNumber:
+                                  (trackingDrafts[order.id] ?? order.trackingNumber ?? '').trim() ||
+                                  `SF${Date.now().toString().slice(-8)}`,
+                              });
+                              await syncAfterMutation('订单已标记发货并保存单号');
+                            }}
+                            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[var(--md-primary-container)] text-[var(--md-on-primary-container)] cursor-pointer"
+                          >
+                            标记发货
+                          </button>
+                          {order.status !== 'refunded' && order.status !== 'pending_payment' && (
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                await blogApi.refundOrder(order.id, order.customerEmail, token);
+                                await syncAfterMutation('订单已退款并回补库存');
+                              }}
+                              className="px-3 py-1.5 text-xs text-red-600 dark:text-red-400 hover:bg-red-500/10 rounded-lg cursor-pointer"
+                            >
+                              退款并回补库存
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </section>
             )}
 

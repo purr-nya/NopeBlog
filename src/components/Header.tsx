@@ -1,21 +1,32 @@
 import { useState, type MouseEvent } from 'react';
-import { Menu, Moon, Search, Sun, X } from 'lucide-react';
+import { Menu, Moon, Search, Sun, User, X } from 'lucide-react';
+import type { UserProfile } from '../types/blog';
 
-export type RouteView = 'home' | 'post' | 'moments' | 'archives' | 'status' | 'explore' | 'admin';
+export type RouteView =
+  | 'home'
+  | 'post'
+  | 'moments'
+  | 'shop'
+  | 'archives'
+  | 'status'
+  | 'explore'
+  | 'admin';
 
 interface HeaderProps {
   siteName: string;
   currentView: RouteView;
   isDark: boolean;
+  currentUser: UserProfile | null;
   onNavigate: (view: RouteView) => void;
   onQuickToggleDark: (origin?: { x: number; y: number }) => void;
   onOpenSearch: () => void;
+  onOpenAccount: () => void;
 }
 
 const NAV_ITEMS: { id: RouteView; label: string }[] = [
   { id: 'home', label: '首页' },
   { id: 'moments', label: '说说' },
-  { id: 'archives', label: '归档' },
+  { id: 'shop', label: '商店' },
   { id: 'status', label: '状态' },
   { id: 'explore', label: '探索' },
 ];
@@ -24,9 +35,11 @@ export function Header({
   siteName,
   currentView,
   isDark,
+  currentUser,
   onNavigate,
   onQuickToggleDark,
   onOpenSearch,
+  onOpenAccount,
 }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -59,7 +72,9 @@ export function Header({
         <nav aria-label="主导航" className="hidden md:flex items-center gap-7">
           {NAV_ITEMS.map((item) => {
             const active =
-              currentView === item.id || (currentView === 'post' && item.id === 'home');
+              currentView === item.id ||
+              (currentView === 'post' && item.id === 'home') ||
+              (currentView === 'archives' && item.id === 'explore');
             return (
               <a
                 key={item.id}
@@ -138,14 +153,14 @@ export function Header({
               );
             })}
           </div>
-          <div className="pt-2 border-t border-[var(--md-outline-variant)]/60 flex items-center gap-2">
+          <div className="pt-2 border-t border-[var(--md-outline-variant)]/60 grid grid-cols-3 gap-2">
             <button
               type="button"
               onClick={handleMobileTheme}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium rounded-[var(--radius-control)] bg-[var(--md-surface-container)] text-[var(--md-on-surface)] cursor-pointer"
+              className="inline-flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium rounded-[var(--radius-control)] bg-[var(--md-surface-container)] text-[var(--md-on-surface)] cursor-pointer"
             >
               {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-              <span>{isDark ? '切换浅色模式' : '切换深色模式'}</span>
+              <span>{isDark ? '浅色' : '深色'}</span>
             </button>
             <button
               type="button"
@@ -153,10 +168,21 @@ export function Header({
                 setMobileMenuOpen(false);
                 onOpenSearch();
               }}
-              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium rounded-[var(--radius-control)] bg-[var(--md-surface-container)] text-[var(--md-on-surface)] cursor-pointer"
+              className="inline-flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium rounded-[var(--radius-control)] bg-[var(--md-surface-container)] text-[var(--md-on-surface)] cursor-pointer"
             >
               <Search className="w-3.5 h-3.5" />
-              <span>全站搜索</span>
+              <span>搜索</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onOpenAccount();
+              }}
+              className="inline-flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium rounded-[var(--radius-control)] bg-[var(--md-primary-container)] text-[var(--md-on-primary-container)] cursor-pointer"
+            >
+              <User className="w-3.5 h-3.5" />
+              <span className="truncate">{currentUser ? currentUser.displayName : '会员账号'}</span>
             </button>
           </div>
         </nav>

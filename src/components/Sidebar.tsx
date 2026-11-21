@@ -1,5 +1,6 @@
 import type { MouseEvent } from 'react';
 import {
+  Archive,
   MapPin,
   Moon,
   Monitor,
@@ -7,6 +8,7 @@ import {
   Rss,
   Search,
   Sun,
+  User,
 } from 'lucide-react';
 import type {
   Category,
@@ -15,6 +17,7 @@ import type {
   RadiusStyle,
   SiteConfig,
   ThemeMode,
+  UserProfile,
 } from '../types/blog';
 import { HUE_PRESETS } from '../utils/theme';
 import { extractTagCounts } from '../utils/blogLogic';
@@ -25,6 +28,8 @@ interface SidebarProps {
   categories: Category[];
   momentsCount: number;
   personalStatus: PersonalStatus;
+  currentUser: UserProfile | null;
+  userOrdersCount: number;
   themeMode: ThemeMode;
   hue: number;
   radiusStyle: RadiusStyle;
@@ -37,6 +42,8 @@ interface SidebarProps {
   onSelectTag: (tag: string | null) => void;
   onOpenSearch: () => void;
   onOpenStatus: () => void;
+  onOpenArchives: () => void;
+  onOpenAccount: (tab?: 'login' | 'register' | 'profile' | 'orders') => void;
 }
 
 export function Sidebar({
@@ -45,6 +52,8 @@ export function Sidebar({
   categories,
   momentsCount,
   personalStatus,
+  currentUser,
+  userOrdersCount,
   themeMode,
   hue,
   radiusStyle,
@@ -57,6 +66,8 @@ export function Sidebar({
   onSelectTag,
   onOpenSearch,
   onOpenStatus,
+  onOpenArchives,
+  onOpenAccount,
 }: SidebarProps) {
   const tags = extractTagCounts(posts);
 
@@ -71,7 +82,7 @@ export function Sidebar({
   return (
     <aside className="space-y-5">
       {/* Author Profile Card (Fuwari Signature) */}
-      <section className="m3-card p-6">
+      <section style={{ ['--stagger' as string]: 0 }} className="m3-card fuwari-onload p-6">
         <div className="flex items-center gap-4">
           <div className="relative w-16 h-16 rounded-[20px] overflow-hidden shrink-0 bg-[var(--md-surface-container-high)] border border-[var(--md-outline-variant)]">
             <img
@@ -132,7 +143,7 @@ export function Sidebar({
           </div>
         </div>
 
-        {/* Search & RSS Actions */}
+        {/* Search, Archives & RSS Actions */}
         <div className="mt-4 grid grid-cols-2 gap-2">
           <button
             type="button"
@@ -142,20 +153,117 @@ export function Sidebar({
             <Search className="w-3.5 h-3.5" />
             <span>全站搜索</span>
           </button>
-          <a
-            href="/api/feed.xml"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-[var(--radius-control)] bg-[var(--md-surface-container)] text-[var(--md-on-surface)] hover:bg-[var(--md-surface-container-high)] transition-colors whitespace-nowrap shrink-0"
+          <button
+            type="button"
+            onClick={onOpenArchives}
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-[var(--radius-control)] bg-[var(--md-surface-container)] text-[var(--md-on-surface)] hover:bg-[var(--md-surface-container-high)] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
           >
-            <Rss className="w-3.5 h-3.5" />
-            <span>RSS 订阅</span>
-          </a>
+            <Archive className="w-3.5 h-3.5" />
+            <span>归档时间轴</span>
+          </button>
         </div>
+
+        <a
+          href="/api/feed.xml"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-2 w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-[var(--radius-control)] bg-[var(--md-surface-container-low)] text-[var(--md-on-surface-variant)] hover:bg-[var(--md-surface-container)] hover:text-[var(--md-on-surface)] transition-colors"
+        >
+          <Rss className="w-3.5 h-3.5 text-[var(--md-primary)]" />
+          <span>RSS 2.0 订阅源</span>
+        </a>
+      </section>
+
+      {/* Member Account / Reader Passport Card */}
+      <section style={{ ['--stagger' as string]: 1 }} className="m3-card fuwari-onload p-5">
+        {currentUser ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <span
+                style={{ backgroundColor: `oklch(0.72 0.14 ${currentUser.avatarHue})` }}
+                className="w-10 h-10 rounded-xl text-white font-display font-bold text-sm inline-flex items-center justify-center shrink-0"
+              >
+                {currentUser.displayName.slice(0, 1).toUpperCase()}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="font-display text-sm font-bold text-[var(--md-on-surface)] truncate">
+                  {currentUser.displayName}
+                </div>
+                <div className="text-xs text-[var(--md-on-surface-variant)] truncate">
+                  @{currentUser.username}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-center py-2 rounded-[var(--radius-inner)] bg-[var(--md-surface-container-low)] text-xs">
+              <div>
+                <div className="font-display font-bold tabular-nums text-[var(--md-on-surface)]">
+                  {userOrdersCount}
+                </div>
+                <div className="text-[11px] text-[var(--md-on-surface-variant)]">商店订单</div>
+              </div>
+              <div>
+                <div className="font-display font-bold tabular-nums text-[var(--md-on-surface)]">
+                  {currentUser.likedPostIds.length + currentUser.likedMomentIds.length}
+                </div>
+                <div className="text-[11px] text-[var(--md-on-surface-variant)]">已点赞内容</div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => onOpenAccount('profile')}
+                className="py-2 text-xs font-medium rounded-[var(--radius-control)] bg-[var(--md-primary-container)] text-[var(--md-on-primary-container)] hover:opacity-90 cursor-pointer"
+              >
+                个人中心
+              </button>
+              <button
+                type="button"
+                onClick={() => onOpenAccount('orders')}
+                className="py-2 text-xs font-medium rounded-[var(--radius-control)] bg-[var(--md-surface-container)] text-[var(--md-on-surface)] hover:bg-[var(--md-surface-container-high)] cursor-pointer"
+              >
+                我的订单
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2.5">
+              <span className="w-9 h-9 rounded-xl bg-[var(--md-primary-container)] text-[var(--md-on-primary-container)] inline-flex items-center justify-center shrink-0">
+                <User className="w-4 h-4" />
+              </span>
+              <div>
+                <h3 className="font-display text-sm font-semibold text-[var(--md-on-surface)]">
+                  读者会员通行证
+                </h3>
+                <p className="text-[11.5px] text-[var(--md-on-surface-variant)]">
+                  同步点赞、评论与小铺订单
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => onOpenAccount('login')}
+                className="py-2 text-xs font-medium rounded-[var(--radius-control)] bg-[var(--md-primary)] text-[var(--md-on-primary)] hover:opacity-92 cursor-pointer"
+              >
+                登录账号
+              </button>
+              <button
+                type="button"
+                onClick={() => onOpenAccount('register')}
+                className="py-2 text-xs font-medium rounded-[var(--radius-control)] bg-[var(--md-surface-container)] text-[var(--md-on-surface)] hover:bg-[var(--md-surface-container-high)] cursor-pointer"
+              >
+                免费注册
+              </button>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* M3 Expressive Dynamic Appearance Studio */}
-      <section className="m3-card p-5 space-y-4">
+      <section style={{ ['--stagger' as string]: 2 }} className="m3-card fuwari-onload p-5 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="font-display text-sm font-semibold text-[var(--md-on-surface)] flex items-center gap-2">
             <Palette className="w-4 h-4 text-[var(--md-primary)]" />
@@ -267,7 +375,7 @@ export function Sidebar({
       </section>
 
       {/* Typecho Categories */}
-      <section className="m3-card p-5">
+      <section style={{ ['--stagger' as string]: 3 }} className="m3-card fuwari-onload p-5">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-display text-sm font-semibold text-[var(--md-on-surface)]">
             文章分类
@@ -306,8 +414,8 @@ export function Sidebar({
         </ul>
       </section>
 
-      {/* Typecho Tag Directory (Clean Interactive Filter Controls) */}
-      <section className="m3-card p-5">
+      {/* Typecho Tag Directory */}
+      <section style={{ ['--stagger' as string]: 4 }} className="m3-card fuwari-onload p-5">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-display text-sm font-semibold text-[var(--md-on-surface)]">
             标签索引

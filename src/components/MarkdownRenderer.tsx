@@ -4,6 +4,7 @@ import { parseMarkdown, type InlineToken } from '../utils/markdown';
 
 interface MarkdownRendererProps {
   content: string;
+  onOpenImage?: (src: string, alt: string) => void;
 }
 
 function InlineTokens({ tokens }: { tokens: InlineToken[] }) {
@@ -94,7 +95,7 @@ function CodeBlock({ lang, content }: { lang: string; content: string }) {
   );
 }
 
-export function MarkdownRenderer({ content }: MarkdownRendererProps) {
+export function MarkdownRenderer({ content, onOpenImage }: MarkdownRendererProps) {
   const { blocks } = useMemo(() => parseMarkdown(content), [content]);
 
   return (
@@ -238,12 +239,28 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
           case 'image':
             return (
               <figure key={index} className="my-6">
-                <img
-                  src={block.src}
-                  alt={block.alt}
-                  referrerPolicy="no-referrer"
-                  className="w-full rounded-[var(--radius-inner)] object-cover max-h-[520px] border border-[var(--md-outline-variant)]"
-                />
+                {onOpenImage ? (
+                  <button
+                    type="button"
+                    onClick={() => onOpenImage(block.src, block.alt)}
+                    aria-label={`在灯箱中放大查看图片：${block.alt || '文章插图'}`}
+                    className="block w-full overflow-hidden rounded-[var(--radius-inner)] border border-[var(--md-outline-variant)] cursor-zoom-in group"
+                  >
+                    <img
+                      src={block.src}
+                      alt={block.alt}
+                      referrerPolicy="no-referrer"
+                      className="w-full object-cover max-h-[520px] transition-transform duration-500 group-hover:scale-[1.02]"
+                    />
+                  </button>
+                ) : (
+                  <img
+                    src={block.src}
+                    alt={block.alt}
+                    referrerPolicy="no-referrer"
+                    className="w-full rounded-[var(--radius-inner)] object-cover max-h-[520px] border border-[var(--md-outline-variant)]"
+                  />
+                )}
                 {block.alt && (
                   <figcaption className="mt-2 text-center text-xs text-[var(--md-on-surface-variant)]">
                     {block.alt}

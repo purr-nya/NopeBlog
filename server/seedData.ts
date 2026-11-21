@@ -4,8 +4,11 @@ import type {
   FriendLink,
   GalleryItem,
   Moment,
+  Order,
   PersonalStatus,
   ServerPost,
+  ServerUserAccount,
+  ShopProduct,
   SiteConfig,
   StandalonePage,
 } from '../src/types/blog';
@@ -17,6 +20,9 @@ export const ASSET_URLS = {
   coverTokyo: '/src/assets/images/cover_tokyo_walk_1795201621571.jpg',
   coverDesk: '/src/assets/images/cover_desk_setup_1795201622816.jpg',
   coverMountain: '/src/assets/images/cover_mountain_mist_1795201633310.jpg',
+  shopZine: '/src/assets/images/shop_photo_zine_1795263621406.jpg',
+  shopCeramic: '/src/assets/images/shop_ceramic_cup_1795263623666.jpg',
+  shopTheme: '/src/assets/images/shop_theme_pack_1795263687105.jpg',
 };
 
 export interface BlogDatabase {
@@ -29,6 +35,9 @@ export interface BlogDatabase {
   comments: Comment[];
   friends: FriendLink[];
   gallery: GalleryItem[];
+  products: ShopProduct[];
+  orders: Order[];
+  users: ServerUserAccount[];
   personalStatus: PersonalStatus;
 }
 
@@ -43,11 +52,17 @@ export function createInitialDatabase(): BlogDatabase {
         '对齐 Fuwari 的澄澈排版，融入 Material Design 3 Expressive 动态色彩与触感卡片交互，保留 Typecho 经典写作基因。',
       heroBanner: ASSET_URLS.heroBanner,
       showHeroBanner: true,
-      announcement: '欢迎来到晴风志：试着滑动首页的精选探索卡片，或点击左侧色轮实时切换整站 OKLCH 主题色。',
+      announcement:
+        '晴风志全新升级：新增独立全屏缩放灯箱、Twitter 个人主页说说皮肤、完整会员账号与小店支付链路（优惠码 KAZE10）。',
       authorName: '林晴风',
+      authorHandle: 'kazeblog',
       authorAvatar: ASSET_URLS.authorAvatar,
-      authorBio: '独立界面设计师与全栈开发者。偏爱克制的排版、胶片色调、手冲浅烘与有生命力的交互动效。',
+      authorBio:
+        '独立界面设计师与全栈开发者。偏爱克制的排版、胶片色调、手冲浅烘与有生命力的交互动效。',
       authorLocation: '杭州 · 西溪',
+      authorJoinedDate: '2024 年 3 月加入',
+      authorFollowers: 1284,
+      authorFollowing: 146,
       authorLinks: [
         { label: 'GitHub', url: 'https://github.com' },
         { label: 'RSS 订阅', url: '/api/feed.xml' },
@@ -120,6 +135,8 @@ export function createInitialDatabase(): BlogDatabase {
 
 很多现代博客在切换主题色时，往往只替换一个主按钮的 HEX 值，结果背景依然是死板的纯白或生硬的纯黑。**Fuwari** 之所以让人过目不忘，在于它用一个单一的色相变量 \`--hue\` 驱动了整套柔和、统一的视觉氛围。
 
+![磨砂玻璃与素陶块的几何光影研究](${ASSET_URLS.coverM3})
+
 而在 **Material Design 3 Expressive** 理念中，界面不再只是冷冰冰的信息容器，而是具备触感、情绪张力与自然物理回弹的数字器物。
 
 :::tip OKLCH 色彩模型的核心优势
@@ -148,14 +165,14 @@ document.startViewTransition(() => root.classList.toggle('dark', nextDark));
 传统的博客列表只提供了垂直滚动一种维度。在晴风志里，我们引入了 **Expressive 叠层卡片组（Swipeable Card Deck）**：
 
 - **拖拽倾斜反馈**：水平拖动时根据位移映射微小旋转角度与透明度，模拟实体明信片在指尖滑出的阻力感。
-- **左右语义分流**：向左滑过浏览下一篇，向右滑入即时收藏到本机灵感清单。
-- **全键盘支持**：除鼠标和触控手势外，使用方向键与底部触觉按钮也能流畅切换。
+- **左右语义分流**：向左滑过浏览下一篇，向右滑入即时收藏到灵感清单。
+- **全键盘与灯箱联动**：文章内任意配图点击均可唤起独立全局灯箱进行滚轮无级缩放。
 
 ## 为什么依然保留 Typecho 的内核精神？
 
 | 维度 | Typecho 经典基因 | 晴风志现代演进 |
 | --- | --- | --- |
-| 数据结构 | 文章、独立页、自定义字段、分类与嵌套评论 | 全量保留，增加说说动态与个人状态看板 |
+| 数据结构 | 文章、独立页、自定义字段、分类与嵌套评论 | 全量保留，增加说说双皮肤、账号系统与个人商店 |
 | 内容安全 | 密码加密文章、评论审核队列 | 服务端加密校验 + 纯 AST 无 XSS Markdown 渲染 |
 | 订阅生态 | 标准 RSS 2.0 输出 | 实时生成 \`/api/feed.xml\` 与 JSON 完整备份 |
 
@@ -186,6 +203,8 @@ document.startViewTransition(() => root.classList.toggle('dark', nextDark));
         content: `# 蓝调时刻的色彩对话
 
 下过小雨的傍晚总是摄影师最偏爱的时刻。天空尚未彻底沉入墨黑，还残留着一层极清澈的钴蓝色；而町屋格栅窗里透出的钨丝灯光，恰好落在潮湿的青石板上，拉出一道道柔和的琥珀倒影。
+
+![雨后祗园石板路上的暖黄灯影](${ASSET_URLS.coverTokyo})
 
 :::note 拍摄笔记
 在雨夜街头尽量避免将快门降到 1/30s 以下，略微提高 ISO 保留轻微颗粒，反而能让木质建筑的纹理显得更有呼吸感。
@@ -229,6 +248,8 @@ document.startViewTransition(() => root.classList.toggle('dark', nextDark));
         content: `# 减少视觉噪音，把注意力还给思考
 
 过去几年里我折腾过各种炫酷的灯带和多屏支架，直到某天早晨把桌面清空，只留下白橡木板、一块羊毛毡桌垫和一本摊开的网格笔记，才发现「留白」才是最高效的生产力工具。
+
+![上午九点的橡木书桌与手冲滤杯](${ASSET_URLS.coverDesk})
 
 ## 每日开机前的十分钟
 
@@ -319,6 +340,8 @@ Typecho 老玩家一定对「自定义字段（Custom Fields）」情有独钟�
 
 手机在进山半小时后彻底失去了信号，最初的半天甚至有些不习惯，手指还会下意识去摸口袋。但到了第二天清晨五点半，当我裹着外套走到湖边时，那种莫名的焦躁已经消失得无影无踪。
 
+![清晨薄雾下的高山镜湖](${ASSET_URLS.coverMountain})
+
 湖面上漂浮着一层极轻的白雾，杉树林的剪影倒映在水里，对称得像一幅水墨版画。
 
 > 我们总以为需要更多输入才能获得灵感，其实很多时候，大脑真正渴望的是一段不被打断的空白。
@@ -377,10 +400,8 @@ Typecho 老玩家一定对「自定义字段（Custom Fields）」情有独钟�
 ## 站点设计哲学
 
 - **Material Design 3 Expressive**：拥抱有机的大圆角、动态 OKLCH 色彩系统与具备物理惯性的卡片手势交互。
-- **Fuwari 阅读美学**：清透的层次、直观的目录导航、舒展的行宽，让每一次阅读都轻盈无压。
-- **Typecho 完整基因**：文章、独立页面、自定义字段、加密文章、说说动态、友链审核与标准 RSS 订阅一应俱全。
-
-欢迎在「说说」里看看我的近况，或者去「友链」页面交换一张属于你的数字名片。`,
+- **Fuwari 阅读美学**：清透的层次、交错入场动效与舒展行宽，让每一次页面切换都轻盈无压。
+- **Typecho 完整基因**：文章、独立页面、自定义字段、加密文章、双皮肤说说动态、会员账号、小店与标准 RSS 订阅一应俱全。`,
       },
       {
         id: 'page-uses',
@@ -400,13 +421,7 @@ Typecho 老玩家一定对「自定义字段（Custom Fields）」情有独钟�
 | --- | --- | --- |
 | 主力电脑 | MacBook Pro 14" M4 Pro | 安静续航强，外出写稿无压力 |
 | 机械键盘 | 定制 65% 阳极铝套件 | 搭配静音线性轴，手感温润 |
-| 随身相机 | Leica Q3 / Fujifilm X100VI | 28mm 与 35mm 视角覆盖全部街头记录 |
-
-## 常用软件
-
-- **编码**：Neovim 与 VS Code 双修，搭配 JetBrains Mono 字体
-- **设计**：Figma、OKLCH 色彩工作台
-- **咖啡**：泰摩栗子手摇磨豆机 + V60 陶制滤杯`,
+| 随身相机 | Leica Q3 / Fujifilm X100VI | 28mm 与 35mm 视角覆盖全部街头记录 |`,
       },
       {
         id: 'page-changelog',
@@ -415,30 +430,35 @@ Typecho 老玩家一定对「自定义字段（Custom Fields）」情有独钟�
         subtitle: '记录晴风志每一次重要的迭代与更新',
         allowComment: false,
         order: 3,
-        updatedAt: '2026-11-19T16:00:00.000Z',
+        updatedAt: '2026-11-21T04:00:00.000Z',
         content: `# 建站与演进记录
 
+- **2026-11-21**：上线独立全屏缩放灯箱、Fuwari 交错入场与路由过渡动效、Twitter 个人主页说说皮肤、完整会员账号与小店支付链路。
 - **2026-11-19**：上线 Expressive 卡片式滑动探索与 View Transitions 圆形深色模式波纹切换。
-- **2026-11-12**：新增「说说」卡片翻阅模式与「状态」站点实时探针 + 写作热力图。
-- **2026-11-01**：完成 Typecho 全功能后台，支持自定义字段、独立页面、友链自助申请审核与 RSS 2.0 订阅源。`,
+- **2026-11-01**：完成 Typecho 全功能后台与 RSS 2.0 订阅源。`,
       },
     ],
     moments: [
       {
         id: 'mom-1',
-        content: '刚给晴风志调完了 OKLCH 动态色轮，把主色拨到 168° 翡翠青再切到深色模式，那一瞬间真的有种玉石温润的质感。试着点一下左侧的深色按钮看看扩散波纹！',
+        content:
+          '刚给晴风志调完了 OKLCH 动态色轮，把主色拨到 168° 翡翠青再切到深色模式，那一瞬间真的有种玉石温润的质感。顺便把说说页面也做成了支持一键切换 Twitter 个人主页皮肤！ #设计 #OKLCH #Fuwari',
         mood: '灵感迸发',
         location: '杭州 · 西溪书房',
         weather: '晴 · 17°C',
         image: ASSET_URLS.coverM3,
         musicTrack: '坂本龙一 — Aqua',
         tags: ['设计', '色彩实验'],
+        pinned: true,
         likes: 42,
+        reposts: 11,
+        views: 1420,
         createdAt: '2026-11-20T08:15:00.000Z',
       },
       {
         id: 'mom-2',
-        content: '手冲了一杯刚养豆七天的水洗耶加雪菲，白桃和茉莉香气非常干净。写长文之前先给自己十分钟安静的准备时间，效率反而翻倍。',
+        content:
+          '手冲了一杯刚养豆七天的水洗耶加雪菲，白桃和茉莉香气非常干净。写长文之前先给自己十分钟安静的准备时间，效率反而翻倍。 #咖啡 #日常',
         mood: '惬意',
         location: '窗边橡木桌',
         weather: '微风 · 15°C',
@@ -446,11 +466,14 @@ Typecho 老玩家一定对「自定义字段（Custom Fields）」情有独钟�
         musicTrack: 'Nujabes — Reflection Eternal',
         tags: ['咖啡', '日常'],
         likes: 31,
+        reposts: 6,
+        views: 894,
         createdAt: '2026-11-18T02:40:00.000Z',
       },
       {
         id: 'mom-3',
-        content: '整理去年京都雨夜的底片，发现最喜欢的反而不是著名景点，而是小巷里两把撑着伞擦肩而过的背影。好照片往往藏在没有目的地的散步里。',
+        content:
+          '整理去年京都雨夜的底片，发现最喜欢的反而不是著名景点，而是小巷里两把撑着伞擦肩而过的背影。好照片往往藏在没有目的地的散步里。 #摄影 #胶片',
         mood: '怀旧',
         location: '相册整理中',
         weather: '多云 · 13°C',
@@ -458,22 +481,28 @@ Typecho 老玩家一定对「自定义字段（Custom Fields）」情有独钟�
         musicTrack: '青叶市子 — 機械仕掛乃宇宙',
         tags: ['摄影', '胶片'],
         likes: 56,
+        reposts: 18,
+        views: 2130,
         createdAt: '2026-11-15T14:20:00.000Z',
       },
       {
         id: 'mom-4',
-        content: '终于把纯 TypeScript 的 Markdown AST 解析器跑通了全部单元测试，零 dangerouslySetInnerHTML，还能自动抽目录和识别 Fuwari 风格提示框，神清气爽。',
+        content:
+          '终于把纯 TypeScript 的 Markdown AST 解析器跑通了全部单元测试，零 dangerouslySetInnerHTML，还能自动抽目录和联动全局灯箱，神清气爽。 #工程 #TypeScript',
         mood: '专注',
         location: '终端前',
         weather: '晴 · 16°C',
         musicTrack: 'Tycho — Awake',
         tags: ['工程', 'TypeScript'],
         likes: 28,
+        reposts: 9,
+        views: 1105,
         createdAt: '2026-11-11T11:50:00.000Z',
       },
       {
         id: 'mom-5',
-        content: '清晨五点半的高山湖面像一面没来得及呼吸的镜子。有时候把手机调成飞行模式两天，比买任何降噪耳机都管用。',
+        content:
+          '清晨五点半的高山湖面像一面没来得及呼吸的镜子。有时候把手机调成飞行模式两天，比买任何降噪耳机都管用。 #山野 #断网日',
         mood: '宁静',
         location: '川西 · 杉木湖',
         weather: '薄雾 · 4°C',
@@ -481,16 +510,21 @@ Typecho 老玩家一定对「自定义字段（Custom Fields）」情有独钟�
         musicTrack: 'Ólafur Arnalds — Near Light',
         tags: ['山野', '断网日'],
         likes: 64,
+        reposts: 22,
+        views: 2640,
         createdAt: '2026-11-05T23:10:00.000Z',
       },
       {
         id: 'mom-6',
-        content: '顺手把博客后台的评论审核和友链自助申请打通了。独立博客最动人的地方，大概就是每一条留言都带着真实敲击键盘的温度。',
+        content:
+          '把晴风小店的完整下单、优惠券校验、扫码支付和数字授权码交付全部打通了，欢迎去小店里用优惠码 KAZE10 体验一整套下单流程。 #独立博客 #Typecho',
         mood: '开心',
         location: '杭州 · 夜色',
         weather: '微凉 · 11°C',
         tags: ['Typecho', '独立博客'],
         likes: 19,
+        reposts: 4,
+        views: 640,
         createdAt: '2026-10-29T15:30:00.000Z',
       },
     ],
@@ -503,7 +537,10 @@ Typecho 老玩家一定对「自定义字段（Custom Fields）」情有独钟�
         author: '沈知遥',
         email: 'zhiyao@example.com',
         url: 'https://example.com',
-        content: 'OKLCH 搭配深色模式圆形波纹切换太顺滑了！而且卡片滑动探索功能真的让人忍不住多刷几篇。',
+        avatarHue: 210,
+        content:
+          'OKLCH 搭配深色模式圆形波纹切换太顺滑了！而且卡片滑动探索功能真的让人忍不住多刷几篇。',
+        likes: 14,
         status: 'approved',
         isAdmin: false,
         createdAt: '2026-11-18T12:20:00.000Z',
@@ -515,7 +552,10 @@ Typecho 老玩家一定对「自定义字段（Custom Fields）」情有独钟�
         parentId: 'cmt-1',
         author: '林晴风',
         email: 'hello@kazeblog.example',
-        content: '谢谢知遥！特意把弹簧阻尼调得像明信片滑出的手感，你也可以试试把色相拨到 168° 翡翠青看看效果。',
+        avatarHue: 250,
+        content:
+          '谢谢知遥！特意把弹簧阻尼调得像明信片滑出的手感，现在文章里的配图也可以直接点开全局缩放灯箱了。',
+        likes: 9,
         status: 'approved',
         isAdmin: true,
         createdAt: '2026-11-18T13:05:00.000Z',
@@ -527,7 +567,9 @@ Typecho 老玩家一定对「自定义字段（Custom Fields）」情有独钟�
         parentId: null,
         author: '陆行舟',
         email: 'xingzhou@example.com',
+        avatarHue: 165,
         content: '蓝调时刻的冷暖光对比拿捏得真好，雨后石板路的反光太有电影质感了。',
+        likes: 8,
         status: 'approved',
         isAdmin: false,
         createdAt: '2026-11-13T04:10:00.000Z',
@@ -539,7 +581,9 @@ Typecho 老玩家一定对「自定义字段（Custom Fields）」情有独钟�
         parentId: null,
         author: '周暮白',
         email: 'mubai@example.com',
+        avatarHue: 45,
         content: '同款白橡木桌面！每天开机前手冲一杯咖啡确实是最好的进入心流仪式。',
+        likes: 6,
         status: 'approved',
         isAdmin: false,
         createdAt: '2026-11-04T06:45:00.000Z',
@@ -551,7 +595,9 @@ Typecho 老玩家一定对「自定义字段（Custom Fields）」情有独钟�
         parentId: null,
         author: '苏砚',
         email: 'suyan@example.com',
-        content: '刚刚试了绯樱红 352° 配浅色模式，整体观感非常通透高级！',
+        avatarHue: 340,
+        content: '切到 Twitter 个人主页皮肤之后质感太惊艳了，3:1 头图和 5 栏互动栏细节拉满！',
+        likes: 11,
         status: 'approved',
         isAdmin: false,
         createdAt: '2026-11-20T09:05:00.000Z',
@@ -563,7 +609,9 @@ Typecho 老玩家一定对「自定义字段（Custom Fields）」情有独钟�
         parentId: null,
         author: '待审核访客 · 陈星河',
         email: 'xinghe@example.com',
+        avatarHue: 280,
         content: '请问纯 AST Markdown 引擎之后会考虑支持自定义脚注语法吗？很喜欢这篇架构拆解。',
+        likes: 2,
         status: 'pending',
         isAdmin: false,
         createdAt: '2026-11-19T18:30:00.000Z',
@@ -682,14 +730,169 @@ Typecho 老玩家一定对「自定义字段（Custom Fields）」情有独钟�
         takenAt: '2026-09-14',
       },
     ],
+    products: [
+      {
+        id: 'prod-kaze-theme',
+        slug: 'kaze-m3-expressive-design-kit',
+        title: '晴风志 M3 Expressive 设计与主题套件',
+        subtitle: 'Figma 组件库 + OKLCH 动态色阶规范 + Typecho 模板源码',
+        description:
+          '完整收录晴风志所使用的 Material Design 3 Expressive 色彩公式、18 套 OKLCH 明暗语义令牌、Fuwari 交错入场动效曲线与独立部署源码，支付后即刻解锁授权码与下载包。',
+        category: 'digital',
+        type: 'digital',
+        priceCents: 8900,
+        originalPriceCents: 12900,
+        image: ASSET_URLS.shopTheme,
+        gallery: [ASSET_URLS.shopTheme, ASSET_URLS.coverM3],
+        badgeText: '即刻交付',
+        specs: [
+          { label: '交付形式', value: '数字下载 + 永久授权码' },
+          { label: '包含文件', value: 'Figma + CSS Tokens + 源码' },
+          { label: '更新权益', value: '免费获取后续全部小版本' },
+        ],
+        variants: [
+          { id: 'var-theme-personal', name: '个人博客授权版', priceCents: 8900, stock: 999 },
+          { id: 'var-theme-studio', name: '工作室多站点版', priceCents: 21900, stock: 999 },
+        ],
+        digitalFileName: 'KazeBlog-M3-Expressive-Kit-2026.txt',
+        digitalPreviewNote: '包含完整 OKLCH 变量表、Figma 链接与商用授权许可声明。',
+        salesCount: 168,
+      },
+      {
+        id: 'prod-kyoto-zine',
+        slug: 'kyoto-keshiki-linen-photobook',
+        title: '《京都景色 · Kyoto Keshiki》布面精装摄影集',
+        subtitle: '128 页艺术微喷胶片画册 · 限量编号首版',
+        description:
+          '收录 2024–2026 年雨季与深秋在京都东山、鸭川与岚山拍摄的 64 幅 35mm 胶片及 Leica Q3 作品。采用日本进口超感哑光纸与亚麻布精装平摊装帧，随书附赠两张雨夜明信片。',
+        category: 'publication',
+        type: 'physical',
+        priceCents: 16800,
+        image: ASSET_URLS.shopZine,
+        gallery: [ASSET_URLS.shopZine, ASSET_URLS.coverTokyo],
+        badgeText: '限量初版',
+        specs: [
+          { label: '装帧规格', value: '190 × 250mm 亚麻精装 128P' },
+          { label: '用纸工艺', value: '150g 超感美术纸四色印刷' },
+          { label: '发货周期', value: '48 小时内顺丰防震寄出' },
+        ],
+        variants: [
+          { id: 'var-zine-standard', name: '标准精装版', priceCents: 16800, stock: 42 },
+          { id: 'var-zine-signed', name: '作者签名 + 暗房银盐明信片', priceCents: 22800, stock: 15 },
+        ],
+        salesCount: 94,
+      },
+      {
+        id: 'prod-ceramic-pour',
+        slug: 'xixi-speckled-stoneware-dripper-set',
+        title: '西溪柴烧芝麻釉手冲滤杯与咖啡杯套装',
+        subtitle: '景德镇手作粗陶 · 92°C 温和蓄热曲线',
+        description:
+          '与景德镇独立陶艺工作室联名定制的桌面手冲器物。杯身保留天然铁点芝麻釉肌理，V60 螺旋肋骨让萃取水流均匀稳定，让每日写稿前的十分钟充满仪式感。',
+        category: 'physical',
+        type: 'physical',
+        priceCents: 21800,
+        originalPriceCents: 24800,
+        image: ASSET_URLS.shopCeramic,
+        gallery: [ASSET_URLS.shopCeramic, ASSET_URLS.coverDesk],
+        badgeText: '手作器物',
+        specs: [
+          { label: '材质工艺', value: '1280°C 高温还原烧制粗陶' },
+          { label: '套装内容', value: 'V60 滤杯 + 280ml 马克杯' },
+          { label: '满额包邮', value: '满 ¥199 享顺丰免邮' },
+        ],
+        variants: [
+          { id: 'var-ceramic-mug', name: '单只 280ml 手冲马克杯', priceCents: 11800, stock: 28 },
+          { id: 'var-ceramic-set', name: '滤杯 + 咖啡杯完整礼盒', priceCents: 21800, stock: 19 },
+        ],
+        salesCount: 73,
+      },
+      {
+        id: 'prod-film-presets',
+        slug: 'blue-hour-leica-color-presets',
+        title: '蓝调时刻 · 12 组胶片与 Lightroom 调色预设',
+        subtitle: '覆盖雨夜暖光、晨雾冷调与室内橡木桌三大场景',
+        description:
+          '提炼自晴风志光影画廊的 12 套 XMP / CUBE 调色预设，适配 Lightroom Classic、Capture One 及 DaVinci Resolve，一键还原克制清透的蓝调暖影层次。',
+        category: 'digital',
+        type: 'digital',
+        priceCents: 4900,
+        image: ASSET_URLS.coverTokyo,
+        gallery: [ASSET_URLS.coverTokyo, ASSET_URLS.coverMountain, ASSET_URLS.heroBanner],
+        badgeText: '即刻交付',
+        specs: [
+          { label: '格式支持', value: 'XMP / DNG / 3D LUT (.cube)' },
+          { label: '适用机身', value: 'Leica / Fujifilm / Sony RAW' },
+          { label: '交付方式', value: '付款成功立即可下载' },
+        ],
+        variants: [
+          { id: 'var-preset-photo', name: '静态摄影 12 组预设包', priceCents: 4900, stock: 999 },
+          { id: 'var-preset-full', name: '摄影 + 视频 LUT 完整包', priceCents: 7900, stock: 999 },
+        ],
+        digitalFileName: 'BlueHour-Film-Presets-Bundle.txt',
+        digitalPreviewNote: '含 12 组 RAW 调色参数说明与 LUT 校验密钥。',
+        salesCount: 241,
+      },
+      {
+        id: 'prod-alpine-print',
+        slug: 'alpine-dawn-archival-art-print',
+        title: '《拂晓杉木湖》收藏级艺术微喷版画',
+        subtitle: '哈内姆勒 310g 摄影纯棉纸 · 附收藏证书',
+        description:
+          '川西海拔 2140 米清晨零风镜面湖泊原片精印，呈现极其细腻的银灰薄雾过渡，适合书房墙面或橡木桌面摆台装点。',
+        category: 'publication',
+        type: 'physical',
+        priceCents: 13800,
+        image: ASSET_URLS.coverMountain,
+        gallery: [ASSET_URLS.coverMountain, ASSET_URLS.heroBanner],
+        specs: [
+          { label: '纸张材质', value: 'Hahnemuhle Photo Rag 310g' },
+          { label: '画面尺寸', value: 'A3 (297 × 420mm) 含 3cm 白边' },
+          { label: '包装方式', value: '加厚无酸圆筒防折寄送' },
+        ],
+        variants: [
+          { id: 'var-print-a3', name: 'A3 无框画芯', priceCents: 13800, stock: 30 },
+          { id: 'var-print-framed', name: 'A3 白橡木实木装裱框', priceCents: 26800, stock: 12 },
+        ],
+        salesCount: 52,
+      },
+      {
+        id: 'prod-coffee-guide',
+        slug: 'creator-deep-work-and-pourover-handbook',
+        title: '《器物与心流》数字阅读典藏版电子书',
+        subtitle: 'EPUB / PDF 双格式 · 5 万字独立创作者工作流手记',
+        description:
+          '系统整理了过去五年关于独立博客写作、桌面环境搭建、手冲萃取曲线与个人知识管理的完整方法论，附带可打印的每日专注卡片模板。',
+        category: 'digital',
+        type: 'digital',
+        priceCents: 3600,
+        image: ASSET_URLS.coverDesk,
+        gallery: [ASSET_URLS.coverDesk, ASSET_URLS.shopZine],
+        badgeText: '即刻交付',
+        specs: [
+          { label: '电子格式', value: 'EPUB + 高清排版 PDF' },
+          { label: '内容体量', value: '8 章节 · 约 52,000 字' },
+          { label: '阅读设备', value: 'Kindle / Apple Books / iPad' },
+        ],
+        variants: [
+          { id: 'var-ebook-std', name: 'EPUB + PDF 完整版', priceCents: 3600, stock: 999 },
+        ],
+        digitalFileName: 'Craft-and-Flow-Digital-Edition.txt',
+        digitalPreviewNote: '包含电子书阅读提取码与可打印网格笔记模板。',
+        salesCount: 315,
+      },
+    ],
+    orders: [],
+    users: [],
     personalStatus: {
-      activity: '正在打磨晴风志的 Material Design 3 动效细节',
+      activity: '正在打磨晴风志的 Fuwari 动效与小店支付链路',
       mood: '沉静专注',
       location: '杭州 · 西溪书房',
       nowPlaying: '坂本龙一 — Aqua (Playing the Piano)',
       currentlyReading: '《设计的几何学》· Kimberly Elam',
-      focusMessage: '本周计划完成两篇关于 OKLCH 色彩和全栈博客安全架构的深度长文。',
-      updatedAt: '2026-11-20T10:30:00.000Z',
+      focusMessage:
+        '本周上线了独立缩放灯箱、Twitter 个人主页说说皮肤、完整会员账号以及小店下单交付链路。',
+      updatedAt: '2026-11-21T03:30:00.000Z',
     },
   };
 }

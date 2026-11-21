@@ -4,6 +4,10 @@ export type ThemeMode = 'light' | 'dark' | 'system';
 export type RadiusStyle = 'expressive' | 'balanced' | 'sharp';
 export type HomeLayoutMode = 'feed' | 'deck' | 'bento';
 export type DensityMode = 'comfortable' | 'compact';
+export type MomentsSkin = 'classic' | 'twitter';
+export type ProductType = 'digital' | 'physical';
+export type PaymentMethod = 'alipay' | 'wechat' | 'card';
+export type OrderStatus = 'pending_payment' | 'paid' | 'shipped' | 'fulfilled' | 'refunded';
 
 export interface CustomField {
   key: string;
@@ -58,10 +62,13 @@ export interface Comment {
   targetType: 'post' | 'moment' | 'page';
   targetId: string;
   parentId: string | null;
+  userId?: string | null;
   author: string;
   email?: string;
   url?: string;
+  avatarHue?: number;
   content: string;
+  likes: number;
   status: CommentStatus;
   isAdmin: boolean;
   createdAt: string;
@@ -76,7 +83,10 @@ export interface Moment {
   image?: string;
   musicTrack?: string;
   tags: string[];
+  pinned?: boolean;
   likes: number;
+  reposts: number;
+  views: number;
   createdAt: string;
 }
 
@@ -112,6 +122,103 @@ export interface PersonalStatus {
   updatedAt: string;
 }
 
+export interface ProductVariant {
+  id: string;
+  name: string;
+  priceCents: number;
+  stock: number;
+}
+
+export interface ShopProduct {
+  id: string;
+  slug: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  category: 'digital' | 'physical' | 'publication';
+  type: ProductType;
+  priceCents: number;
+  originalPriceCents?: number;
+  image: string;
+  gallery: string[];
+  badgeText?: string;
+  specs: { label: string; value: string }[];
+  variants: ProductVariant[];
+  digitalFileName?: string;
+  digitalPreviewNote?: string;
+  salesCount: number;
+}
+
+export interface CartItem {
+  productId: string;
+  variantId: string;
+  quantity: number;
+}
+
+export interface OrderItemSnapshot {
+  productId: string;
+  variantId: string;
+  title: string;
+  variantName: string;
+  type: ProductType;
+  unitPriceCents: number;
+  quantity: number;
+  image: string;
+  digitalLicenseKey?: string;
+  digitalFileName?: string;
+}
+
+export interface Order {
+  id: string;
+  orderNo: string;
+  userId?: string | null;
+  customerName: string;
+  customerEmail: string;
+  customerPhone?: string;
+  shippingAddress?: string;
+  note?: string;
+  items: OrderItemSnapshot[];
+  subtotalCents: number;
+  discountCents: number;
+  shippingCents: number;
+  totalCents: number;
+  couponCode?: string;
+  paymentMethod?: PaymentMethod;
+  paymentReference?: string;
+  cardLast4?: string;
+  trackingNumber?: string;
+  status: OrderStatus;
+  createdAt: string;
+  paidAt?: string;
+}
+
+export interface UserProfile {
+  id: string;
+  username: string;
+  displayName: string;
+  email: string;
+  bio: string;
+  avatarHue: number;
+  role: 'member';
+  likedPostIds: string[];
+  likedMomentIds: string[];
+  likedCommentIds: string[];
+  repostedMomentIds: string[];
+  savedPostIds: string[];
+  createdAt: string;
+}
+
+export interface ServerUserAccount extends UserProfile {
+  passwordHash: string;
+}
+
+export interface LightboxSlide {
+  src: string;
+  title?: string;
+  caption?: string;
+  meta?: string;
+}
+
 export interface SiteConfig {
   siteName: string;
   tagline: string;
@@ -121,9 +228,13 @@ export interface SiteConfig {
   showHeroBanner: boolean;
   announcement: string;
   authorName: string;
+  authorHandle: string;
   authorAvatar: string;
   authorBio: string;
   authorLocation: string;
+  authorJoinedDate: string;
+  authorFollowers: number;
+  authorFollowing: number;
   authorLinks: { label: string; url: string }[];
   defaultHue: number;
   defaultThemeMode: ThemeMode;
@@ -143,6 +254,7 @@ export interface BlogBootstrapData {
   comments: Comment[];
   friends: FriendLink[];
   gallery: GalleryItem[];
+  products: ShopProduct[];
   personalStatus: PersonalStatus;
 }
 
@@ -161,6 +273,8 @@ export interface HealthProbeResult {
     momentsCount: number;
     commentsCount: number;
     pagesCount: number;
+    productsCount?: number;
+    ordersCount?: number;
   };
 }
 
