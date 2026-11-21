@@ -1,0 +1,189 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --hue: 250;
+  --radius-card: 28px;
+  --radius-inner: 18px;
+  --radius-control: 14px;
+
+  /* Material Design 3 Expressive OKLCH Tokens (Light) */
+  --md-surface: oklch(0.978 0.008 var(--hue));
+  --md-surface-container-lowest: oklch(0.996 0.003 var(--hue));
+  --md-surface-container-low: oklch(0.962 0.012 var(--hue));
+  --md-surface-container: oklch(0.945 0.016 var(--hue));
+  --md-surface-container-high: oklch(0.922 0.022 var(--hue));
+  --md-surface-container-highest: oklch(0.896 0.028 var(--hue));
+
+  --md-on-surface: oklch(0.205 0.022 var(--hue));
+  --md-on-surface-variant: oklch(0.42 0.028 var(--hue));
+  --md-outline: oklch(0.56 0.024 var(--hue));
+  --md-outline-variant: oklch(0.86 0.018 var(--hue));
+
+  --md-primary: oklch(0.52 0.165 var(--hue));
+  --md-on-primary: oklch(0.99 0.004 var(--hue));
+  --md-primary-container: oklch(0.90 0.062 var(--hue));
+  --md-on-primary-container: oklch(0.24 0.085 var(--hue));
+
+  --md-secondary: oklch(0.50 0.065 calc(var(--hue) + 18));
+  --md-secondary-container: oklch(0.91 0.036 calc(var(--hue) + 18));
+  --md-on-secondary-container: oklch(0.26 0.048 calc(var(--hue) + 18));
+
+  --md-tertiary: oklch(0.56 0.135 calc(var(--hue) - 38));
+  --md-tertiary-container: oklch(0.92 0.055 calc(var(--hue) - 38));
+  --md-on-tertiary-container: oklch(0.26 0.075 calc(var(--hue) - 38));
+
+  --font-display: 'Bricolage Grotesque', 'Noto Sans SC', sans-serif;
+  --font-sans: 'Plus Jakarta Sans', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+}
+
+.dark {
+  /* Material Design 3 Expressive OKLCH Tokens (Dark) */
+  --md-surface: oklch(0.155 0.014 var(--hue));
+  --md-surface-container-lowest: oklch(0.125 0.012 var(--hue));
+  --md-surface-container-low: oklch(0.188 0.016 var(--hue));
+  --md-surface-container: oklch(0.215 0.020 var(--hue));
+  --md-surface-container-high: oklch(0.252 0.024 var(--hue));
+  --md-surface-container-highest: oklch(0.295 0.028 var(--hue));
+
+  --md-on-surface: oklch(0.935 0.012 var(--hue));
+  --md-on-surface-variant: oklch(0.755 0.022 var(--hue));
+  --md-outline: oklch(0.60 0.022 var(--hue));
+  --md-outline-variant: oklch(0.31 0.022 var(--hue));
+
+  --md-primary: oklch(0.76 0.135 var(--hue));
+  --md-on-primary: oklch(0.18 0.055 var(--hue));
+  --md-primary-container: oklch(0.32 0.095 var(--hue));
+  --md-on-primary-container: oklch(0.92 0.045 var(--hue));
+
+  --md-secondary: oklch(0.74 0.055 calc(var(--hue) + 18));
+  --md-secondary-container: oklch(0.30 0.038 calc(var(--hue) + 18));
+  --md-on-secondary-container: oklch(0.90 0.028 calc(var(--hue) + 18));
+
+  --md-tertiary: oklch(0.78 0.115 calc(var(--hue) - 38));
+  --md-tertiary-container: oklch(0.34 0.075 calc(var(--hue) - 38));
+  --md-on-tertiary-container: oklch(0.93 0.045 calc(var(--hue) - 38));
+}
+
+html {
+  font-family: var(--font-sans);
+  background-color: var(--md-surface);
+  color: var(--md-on-surface);
+  scroll-behavior: smooth;
+}
+
+.dark body {
+  letter-spacing: 0.008em;
+}
+
+h1, h2, h3, .font-display {
+  font-family: var(--font-display);
+}
+
+code, pre, .font-mono {
+  font-family: var(--font-mono);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.m3-card {
+  background-color: var(--md-surface-container-lowest);
+  border: 1px solid var(--md-outline-variant);
+  border-radius: var(--radius-card);
+  transition: background-color 220ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 220ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.m3-surface-low {
+  background-color: var(--md-surface-container-low);
+  border-radius: var(--radius-inner);
+}
+
+.m3-surface-mid {
+  background-color: var(--md-surface-container);
+  border-radius: var(--radius-inner);
+}
+
+@keyframes m3-view-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.m3-view-enter {
+  animation: m3-view-enter 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Dynamic Circular Ripple Dark Mode Transition (View Transitions API) */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-new(root) {
+  animation: md-theme-ripple 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes md-theme-ripple {
+  from {
+    clip-path: circle(0px at var(--ripple-x, 50%) var(--ripple-y, 50%));
+  }
+  to {
+    clip-path: circle(var(--ripple-r, 150vmax) at var(--ripple-x, 50%) var(--ripple-y, 50%));
+  }
+}
+
+/* Custom M3 Hue Range Slider */
+input[type="range"].hue-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    oklch(0.68 0.18 0),
+    oklch(0.68 0.18 60),
+    oklch(0.68 0.18 120),
+    oklch(0.68 0.18 180),
+    oklch(0.68 0.18 240),
+    oklch(0.68 0.18 300),
+    oklch(0.68 0.18 360)
+  );
+  outline: none;
+}
+
+input[type="range"].hue-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--md-surface-container-lowest);
+  border: 3px solid var(--md-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+  cursor: pointer;
+  transition: transform 150ms ease;
+}
+
+input[type="range"].hue-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.14);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-new(root) {
+    animation: none;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}

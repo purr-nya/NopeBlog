@@ -1,0 +1,6 @@
+{
+  "name": "晴风志 · KazeBlog",
+  "description": "遵循 Material Design 3 Expressive 美学与 Fuwari 架构的现代 Typecho 全功能博客系统，支持动态色调与深色模式波纹切换、卡片式滑动探索、说说动态、实时状态看板与完整后台管理。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
